@@ -1,5 +1,6 @@
 A binary tree optimized for 2D querying
 
+
 # Search Radius
 Allows for searching for items within a set distance from a point, a second method is also available for filtered queries where it skips areas within an inner radius.
 
