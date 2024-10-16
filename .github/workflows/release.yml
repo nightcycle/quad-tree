@@ -53,10 +53,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Install wally packages
-      - name: update wally packages
-        run: wally-update patch
-
       - name: install wally packages
         run: wally install
 
