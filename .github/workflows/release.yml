@@ -49,8 +49,7 @@ jobs:
       # Checkout your Git repo
       - uses: actions/checkout@v2
 
-      # Install foreman and all foreman tools
-      - uses: Roblox/setup-foreman@v1
+      - uses: ok-nick/setup-aftman@v0.4.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -77,6 +76,7 @@ jobs:
           curl -L "https://gist.github.com/nightcycle/50ca8f42147077b8f584b503030c8500/raw" > "types/testEZ.d.lua"
           curl -L "https://gist.github.com/nightcycle/ae7ea3376337512772d1d2b314ef467b/raw" > "types/remodel.d.lua"
           curl -L "https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.lua" > "types/globalTypes.d.lua"
+          curl -L "https://gist.githubusercontent.com/nightcycle/3ecee1b598c4e1d26acd7a2899ff4350/raw/dec85b24dec6697e0c4f9fe9b991fd2d9f7efa21/bench.d.lua" > "types/bench.d.lua"
 
           # lint definitions
           if [ ! -d "lints" ]; then

@@ -4,15 +4,142 @@
 -- Packages
 -- Modules
 -- Types
+type NodeImpl<V> = {
+	__index: NodeImpl<V>,
+	GetIfContainedBy: (
+		self: Node<V>,
+		minX: number,
+		minY: number,
+		maxX: number,
+		maxY: number
+	) -> boolean,
+	new: (x: number, y: number, value: V) -> Node<V>,
+}
+type Node<V> = typeof(setmetatable(
+	{} :: {
+		Value: V,
+		X: number,
+		Y: number,
+	},
+	{} :: NodeImpl<V>
+))
+type QuadTreeImpl<V> = {
+	__index: QuadTreeImpl<V>,
+	_Subdivide: (self: QuadTree<V>) -> (),
+	_Insert: (self: QuadTree<V>, node: Node<V>) -> boolean,
+	Insert: (
+		self: QuadTree<V>,
+		x: number,
+		y: number,
+		value: V
+	) -> (), --inserts an item into the tree at a position
+	_AddDescendants: (self: QuadTree<V>, array: { V }) -> (),
+	_SearchRadius: (
+		self: QuadTree<V>,
+		x: number,
+		y: number,
+		radius: number,
+		found: { V }
+	) -> (),
+	SearchRadius: (
+		self: QuadTree<V>,
+		x: number,
+		y: number,
+		radius: number
+	) -> { V }, --gets all items in a radius
+	_FilterSearchRadius: (
+		self: QuadTree<V>,
+		x: number,
+		y: number,
+		radius: number,
+		fX: number,
+		fY: number,
+		fRadius: number,
+		found: { V }
+	) -> (),
+	FilterSearchRadius: (
+		self: QuadTree<V>,
+		x: number,
+		y: number,
+		radius: number,
+		fX: number,
+		fY: number,
+		fRadius: number
+	) -> { V }, --gets all items in a ring, filtering out items within the inner filter radius
+	_SearchRegion: (
+		self: QuadTree<V>,
+		minX: number,
+		minY: number,
+		maxX: number,
+		maxY: number,
+		found: { V }
+	) -> (),
+	SearchRegion: (
+		self: QuadTree<V>,
+		minX: number,
+		minY: number,
+		maxX: number,
+		maxY: number
+	) -> { V }, --gets all the items in a box
+	_FilterSearchRegion: (
+		self: QuadTree<V>,
+		minX: number,
+		minY: number,
+		maxX: number,
+		maxY: number,
+		fMinX: number,
+		fMinY: number,
+		fMaxX: number,
+		fMaxY: number,
+		found: { V }
+	) -> (),
+	FilterSearchRegion: (
+		self: QuadTree<V>,
+		minX: number,
+		minY: number,
+		maxX: number,
+		maxY: number,
+		fMinX: number,
+		fMinY: number,
+		fMaxX: number,
+		fMaxY: number
+	) -> { V }, -- get all the items in a rectangular ring, filtering out all the items in the inner rectangle
+	new: (
+		minX: number,
+		minY: number,
+		maxX: number,
+		maxY: number,
+		capacity: number
+	) -> QuadTree<V>, -- creates a new quad tree, establishing the size of the area
+}
+
+export type QuadTree<V> = typeof(setmetatable(
+	{} :: {
+		__index: QuadTree<V>,
+		_MinX: number,
+		_MinY: number,
+		_MaxX: number,
+		_MaxY: number,
+		_Width: number,
+		_Height: number,
+		_Radius: number,
+		_CenterX: number,
+		_CenterY: number,
+		_Capacity: number,
+		_Nodes: { [number]: Node<V> },
+		_Subdivisions: { [number]: QuadTree<V> }?,
+	},
+	{} :: QuadTreeImpl<V>
+))
 -- Constants
 -- Variables
 -- References
 -- Private Functions
--- function getMag(x1: number, y1: number, x2: number, y2: number): number
--- 	local a = (x2 - x1)
--- 	local b = (y2 - y1)
--- 	return (a ^ 2 + b ^ 2) ^ (1 / 2)
--- end
+function getDistance(x1: number, y1: number, x2: number, y2: number): number
+	local a = (x2 - x1)
+	local b = (y2 - y1)
+	return math.sqrt(math.pow(a, 2) + math.pow(b, 2))
+end
 
 function getIfCircleOverlaps(
 	x1: number,
@@ -22,7 +149,7 @@ function getIfCircleOverlaps(
 	y2: number,
 	r2: number
 ): boolean
-	return (r1 + r2)^2 >= (x2-x1)^2 + (y2-y1)^2  -- r1 + r2 >= getMag(x1, y1, x2, y2)
+	return (r1 + r2) >= getDistance(x1, y1, x2, y2)
 end
 
 function getIfCircleContains(
@@ -33,7 +160,7 @@ function getIfCircleContains(
 	outY: number,
 	outR: number
 ): boolean
-	return (outR - inR)^2 >= (outX-inX)^2 + (outY-inY)^2 --getMag(inX, inY, outX, outY)
+	return outR >= getDistance(inX, inY, outX, outY) + inR
 end
 
 function getIfCircleContainsPoint(
@@ -43,10 +170,10 @@ function getIfCircleContainsPoint(
 	cY: number,
 	radius: number
 ): boolean
-	return (cX-pX)^2 + (cY-pY)^2 <= radius^2 --getMag(pX, pY, cX, cY) <= radius
+	return getDistance(pX, pY, cX, cY) <= radius
 end
 
-function getIfOverlaps(
+function getIfBoxOverlaps(
 	aMinX: number,
 	aMinY: number,
 	aMaxX: number,
@@ -62,7 +189,7 @@ function getIfOverlaps(
 		and (aMaxY > bMinY)
 end
 
-function getIfContains(
+function getIfBoxContains(
 	insideMinX: number,
 	insideMinY: number,
 	insideMaxX: number,
@@ -79,22 +206,7 @@ function getIfContains(
 end
 
 -- Node class
-type Node<V> = {
-	__index: Node<V>,
-	Value: V,
-	X: number,
-	Y: number,
-	GetIfContainedBy: (
-		self: Node<V>,
-		minX: number,
-		minY: number,
-		maxX: number,
-		maxY: number
-	) -> boolean,
-	new: (x: number, y: number, value: V) -> Node<V>,
-}
-
-local Node = {} :: Node<any>
+local Node: NodeImpl<unknown> = {} :: any
 Node.__index = Node
 
 function Node:GetIfContainedBy(
@@ -106,7 +218,7 @@ function Node:GetIfContainedBy(
 	return self.X >= minX and self.X < maxX and self.Y >= minY and self.Y < maxY
 end
 
-function Node.new(x: number, y: number, value: unknown): Node<any>
+function Node.new(x: number, y: number, value: unknown): Node<unknown>
 	local self: Node<unknown> = setmetatable({}, Node) :: any
 	self.X = x
 	self.Y = y
@@ -116,104 +228,8 @@ function Node.new(x: number, y: number, value: unknown): Node<any>
 end
 
 -- QuadTree class
-export type QuadTree<V> = {
-	__index: QuadTree<V>,
-	_MinX: number,
-	_MinY: number,
-	_MaxX: number,
-	_MaxY: number,
-	_Width: number,
-	_Height: number,
-	_Radius: number,
-	_CenterX: number,
-	_CenterY: number,
-	_Capacity: number,
-	_Nodes: { [number]: Node<V> },
-	_Subdivisions: { [number]: QuadTree<V> }?,
-	_Subdivide: (self: QuadTree<V>) -> (),
-	_Insert: (self: QuadTree<V>, node: Node<V>) -> boolean,
-	Insert: (self: QuadTree<V>, x: number, y: number, value: V) -> (), --inserts an item into the tree at a position
-	_AddDescendants: (self: QuadTree<V>, array: {[number]: V}) -> (),
-	_SearchRadius: (
-		self: QuadTree<V>,
-		x: number,
-		y: number,
-		radius: number,
-		found: { [number]: Node<any> }
-	) -> (),
-	SearchRadius: (
-		self: QuadTree<V>,
-		x: number,
-		y: number,
-		radius: number
-	) -> { [number]: V }, --gets all items in a radius
-	_FilterSearchRadius: (
-		self: QuadTree<V>,
-		x: number,
-		y: number,
-		radius: number,
-		fX: number,
-		fY: number,
-		fRadius: number,
-		found: { [number]: Node<any> }
-	) -> (),
-	FilterSearchRadius: (
-		self: QuadTree<V>,
-		x: number,
-		y: number,
-		radius: number,
-		fX: number,
-		fY: number,
-		fRadius: number
-	) -> { [number]: V }, --gets all items in a ring, filtering out items within the inner filter radius
-	_SearchRegion: (
-		self: QuadTree<V>,
-		minX: number,
-		minY: number,
-		maxX: number,
-		maxY: number,
-		found: { [number]: Node<any> }
-	) -> (),
-	SearchRegion: (
-		self: QuadTree<V>,
-		minX: number,
-		minY: number,
-		maxX: number,
-		maxY: number
-	) -> { [number]: V }, --gets all the items in a box
-	_FilterSearchRegion: (
-		self: QuadTree<V>,
-		minX: number,
-		minY: number,
-		maxX: number,
-		maxY: number,
-		fMinX: number,
-		fMinY: number,
-		fMaxX: number,
-		fMaxY: number,
-		found: { [number]: Node<any> }
-	) -> (),
-	FilterSearchRegion: (
-		self: QuadTree<V>,
-		minX: number,
-		minY: number,
-		maxX: number,
-		maxY: number,
-		fMinX: number,
-		fMinY: number,
-		fMaxX: number,
-		fMaxY: number
-	) -> { [number]: V }, -- get all the items in a rectangular ring, filtering out all the items in the inner rectangle
-	new: (
-		minX: number,
-		minY: number,
-		maxX: number,
-		maxY: number,
-		capacity: number
-	) -> QuadTree<V>, -- creates a new quad tree, establishing the size of the area
-}
 
-local QuadTree = {} :: QuadTree<any>
+local QuadTree: QuadTree<unknown> = {} :: any
 QuadTree.__index = QuadTree
 
 function QuadTree.new(
@@ -222,8 +238,8 @@ function QuadTree.new(
 	maxX: number,
 	maxY: number,
 	capacity: number
-): QuadTree<any>
-	local self: QuadTree<any> = setmetatable({}, QuadTree) :: any
+): QuadTree<unknown>
+	local self: QuadTree<unknown> = setmetatable({}, QuadTree) :: any
 
 	self._MinX = minX
 	self._MinY = minY
@@ -233,14 +249,14 @@ function QuadTree.new(
 	self._Height = self._MaxY - self._MinY
 	self._CenterX = self._MinX + self._Width / 2
 	self._CenterY = self._MinY + self._Height / 2
-	self._Radius = (((self._Width * 0.5) ^ 2) + ((self._Height * 0.5) ^ 2))
-		^ (1 / 2)
+	self._Radius = getDistance(self._MinX, self._MinY, self._MaxX, self._MaxY)
+		/ 2
 	self._Capacity = capacity
 	self._Nodes = table.create(0)
 	return self
 end
 
-function QuadTree:_AddDescendants(array: {[number]: any}): ()
+function QuadTree:_AddDescendants(array: { unknown }): ()
 	for i, v in ipairs(self._Nodes) do
 		table.insert(array, v)
 	end
@@ -286,7 +302,7 @@ function QuadTree:_Subdivide()
 	}
 end
 
-function QuadTree:_Insert(node: Node<any>): boolean
+function QuadTree:_Insert(node: Node<unknown>): boolean
 	if
 		not node:GetIfContainedBy(
 			self._MinX,
@@ -323,7 +339,7 @@ function QuadTree:_Insert(node: Node<any>): boolean
 	end
 end
 
-function QuadTree:Insert(x: number, y: number, value: any): ()
+function QuadTree:Insert(x: number, y: number, value: unknown): ()
 	return self:_Insert(Node.new(x, y, value))
 end
 
@@ -332,10 +348,10 @@ function QuadTree:_SearchRegion(
 	minY: number,
 	maxX: number,
 	maxY: number,
-	found: { [number]: Node<any> }
+	found: { unknown }
 ): ()
 	if
-		not getIfOverlaps(
+		not getIfBoxOverlaps(
 			self._MinX,
 			self._MinY,
 			self._MaxX,
@@ -348,7 +364,6 @@ function QuadTree:_SearchRegion(
 	then
 		return
 	end
-
 	for _, node in ipairs(self._Nodes) do
 		if node:GetIfContainedBy(minX, minY, maxX, maxY) then
 			table.insert(found, node.Value)
@@ -367,8 +382,8 @@ function QuadTree:SearchRegion(
 	minY: number,
 	maxX: number,
 	maxY: number
-): { [number]: any }
-	local out: { [number]: any } = table.create(0)
+): { unknown }
+	local out: { unknown } = table.create(0)
 	self:_SearchRegion(minX, minY, maxX, maxY, out)
 	return out
 end
@@ -377,17 +392,18 @@ function QuadTree:_SearchRadius(
 	x: number,
 	y: number,
 	radius: number,
-	found: { [number]: Node<any> }
+	found: { unknown }
 ): ()
-
-	if getIfCircleContains(
-		self._CenterX,
-		self._CenterY,
-		self._Radius,
-		x,
-		y,
-		radius
-	) then
+	if
+		getIfCircleContains(
+			self._CenterX,
+			self._CenterY,
+			self._Radius,
+			x,
+			y,
+			radius
+		)
+	then
 		self:_AddDescendants(found)
 		return
 	end
@@ -422,8 +438,8 @@ function QuadTree:SearchRadius(
 	x: number,
 	y: number,
 	radius: number
-): { [number]: any }
-	local out: { [number]: any } = table.create(0)
+): { unknown }
+	local out: { unknown } = table.create(0)
 	self:_SearchRadius(x, y, radius, out)
 	return out
 end
@@ -435,7 +451,7 @@ function QuadTree:_FilterSearchRadius(
 	fX: number,
 	fY: number,
 	fRadius: number,
-	found: { [number]: Node<any> }
+	found: { unknown }
 ): ()
 	if
 		not getIfCircleOverlaps(
@@ -482,8 +498,8 @@ function QuadTree:FilterSearchRadius(
 	fX: number,
 	fY: number,
 	fRadius: number
-): { [number]: any }
-	local out: { [number]: any } = table.create(0)
+): { unknown }
+	local out: { unknown } = table.create(0)
 	self:_FilterSearchRadius(x, y, radius, fX, fY, fRadius, out)
 	return out
 end
@@ -497,10 +513,10 @@ function QuadTree:_FilterSearchRegion(
 	fMinY: number,
 	fMaxX: number,
 	fMaxY: number,
-	found: { [number]: Node<any> }
+	found: { unknown }
 ): ()
 	if
-		not getIfOverlaps(
+		not getIfBoxOverlaps(
 			self._MinX,
 			self._MinY,
 			self._MaxX,
@@ -510,7 +526,7 @@ function QuadTree:_FilterSearchRegion(
 			maxX,
 			maxY
 		)
-		or getIfContains(
+		or getIfBoxContains(
 			self._MinX,
 			self._MinY,
 			self._MaxX,
@@ -559,8 +575,8 @@ function QuadTree:FilterSearchRegion(
 	fMinY: number,
 	fMaxX: number,
 	fMaxY: number
-): { [number]: any }
-	local out: { [number]: any } = table.create(0)
+): { unknown }
+	local out: { unknown } = table.create(0)
 	self:_FilterSearchRegion(
 		minX,
 		minY,
@@ -575,4 +591,14 @@ function QuadTree:FilterSearchRegion(
 	return out
 end
 
-return QuadTree
+return {
+	new = function<V>(
+		minX: number,
+		minY: number,
+		maxX: number,
+		maxY: number,
+		capacity: number
+	): QuadTree<V>
+		return QuadTree.new(minX, minY, maxX, maxY, capacity) :: any
+	end,
+}

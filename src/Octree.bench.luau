@@ -1,20 +1,28 @@
 --!strict
 -- Services
 -- Packages
-local Octree = require(game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Octree"))
+local Octree = require(
+	game:GetService("ReplicatedStorage")
+		:WaitForChild("Packages")
+		:WaitForChild("Octree")
+)
 -- Modules
-local QuadTree = require(game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("package"))
+local QuadTree = require(
+	game:GetService("ReplicatedStorage")
+		:WaitForChild("Packages")
+		:WaitForChild("package")
+)
 -- Types
 -- Constants
 local QUERY_COUNT = 256 -- 2048
-local DIM = 2^15
+local DIM = 2 ^ 15
 -- local FILTER_RATIO = 0.5
 -- local FILTER_RADIUS = FILTER_RATIO * QUERY_RADIUS
 -- local FILTER_WIDTH = FILTER_RADIUS * FILTER_RATIO
 -- Variables
 -- References
 
-local methods: {[string]: () -> ()} = {}
+local methods: { [string]: (profiler: Profiler) -> () } = {}
 
 -- Private Functions
 function test(capacity: number, valueCount: number, radius: number)
@@ -22,24 +30,29 @@ function test(capacity: number, valueCount: number, radius: number)
 	local tree = QuadTree.new(0, 0, DIM, DIM, capacity)
 	-- local queryWidth = math.round(math.sqrt(((radius*2)^2)/2))
 
-	for i=1, valueCount do
-		local point = Vector3.new(math.random(1, DIM),math.random(1, DIM))
+	for i = 1, valueCount do
+		local point = Vector3.new(math.random(1, DIM), math.random(1, DIM))
 		tree:Insert(point.X, point.Y, point)
 	end
 
-	local queryPoints: {[number]: Vector3} = {}
-	for i=1, QUERY_COUNT do
-		local point = Vector3.new(math.random(1, DIM),math.random(1, DIM))
+	local queryPoints: { [number]: Vector3 } = {}
+	for i = 1, QUERY_COUNT do
+		local point = Vector3.new(math.random(1, DIM), math.random(1, DIM))
 		table.insert(queryPoints, point)
 	end
 
-	methods[`octree-search-radius;radius={radius},size={valueCount}    `] = function()
-		for i=1, QUERY_COUNT do
+	methods[`octree-search-radius;radius={radius},size={valueCount}    `] = function(
+		profiler: Profiler
+	)
+		for i = 1, QUERY_COUNT do
 			octree:SearchRadius(queryPoints[i], radius)
 		end
 	end
-	methods[`quad-search-radius;radius={radius},size={valueCount},capacity={capacity}    `] = function()
-		for i=1, QUERY_COUNT do
+
+	methods[`quad-search-radius;radius={radius},size={valueCount},capacity={capacity}`] = function(
+		profiler: Profiler
+	)
+		for i = 1, QUERY_COUNT do
 			tree:SearchRadius(queryPoints[i].X, queryPoints[i].Y, radius)
 		end
 	end
@@ -82,8 +95,8 @@ local defaultRadius = 16
 
 test(defaultCapacity, defaultValue, defaultRadius)
 
-test(defaultCapacity*0.5, defaultValue, defaultRadius)
-test(defaultCapacity*2, defaultValue, defaultRadius)
+test(defaultCapacity * 0.5, defaultValue, defaultRadius)
+test(defaultCapacity * 2, defaultValue, defaultRadius)
 
 -- test(defaultCapacity, defaultValue, defaultRadius*0.25)
 -- test(defaultCapacity, defaultValue, defaultRadius*0.5)

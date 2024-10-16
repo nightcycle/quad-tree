@@ -1,0 +1,57 @@
+{
+	"import bench": {
+		"prefix": "import bench",
+		"body": [
+			"--!strict",
+			"--!native",
+			"-- Services",
+			"-- Packages",
+			"-- Modules",
+			"-- Types",
+			"-- Constants",
+			"-- Variables",
+			"-- References",
+			"-- Private Functions",
+			"-- Class",
+			"local Module: BenchModule<$param> = {",
+			"\tParameterGenerator = function(): $param",
+			"\t\t",
+			"\tend,",
+			"\tFunctions = {",
+			"\t\t[\"$func\"] = function(profiler: Profiler, parameter: $param) end,",
+			"\t},",
+			"}",
+			"",
+			"return Module"
+		],
+
+		"description": "Sets up a benchmark module.",
+		"scope": "*lua,luau"
+	},
+	"import wally package": {
+		"prefix": "import wally",
+		"body": [
+			"local $name = require(\"@wally/$name\")"
+		],
+		"description": "Imports a wally package module.",
+		"scope": "lua,luau"
+	},
+	"import header": {
+		"prefix": "import header",
+		"body": [
+			"--!strict",
+			"--!native",
+			"-- Services",
+			"-- Packages",
+			"-- Modules",
+			"-- Types",
+			"-- Constants",
+			"-- Variables",
+			"-- References",
+			"-- Private Functions",
+			"-- Class",
+		],
+		"description": "A basic header for a file.",
+		"scope": "lua,luau"
+	},
+}
