@@ -138,7 +138,7 @@ export type QuadTree<V> = typeof(setmetatable(
 function getDistance(x1: number, y1: number, x2: number, y2: number): number
 	local a = (x2 - x1)
 	local b = (y2 - y1)
-	return math.sqrt(math.pow(a, 2) + math.pow(b, 2))
+	return ((a ^ 2) + (b ^ 2)) ^ 0.5
 end
 
 function getIfCircleOverlaps(
