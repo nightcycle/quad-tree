@@ -22,7 +22,7 @@ local DIM = 2 ^ 15
 -- Variables
 -- References
 
-local methods: { [string]: (profiler: Profiler) -> () } = {}
+local methods: { [string]: () -> () } = {}
 
 -- Private Functions
 function test(capacity: number, valueCount: number, radius: number)
@@ -41,17 +41,13 @@ function test(capacity: number, valueCount: number, radius: number)
 		table.insert(queryPoints, point)
 	end
 
-	methods[`octree-search-radius;radius={radius},size={valueCount}    `] = function(
-		profiler: Profiler
-	)
+	methods[`octree-search-radius;radius={radius},size={valueCount}    `] = function()
 		for i = 1, QUERY_COUNT do
 			octree:SearchRadius(queryPoints[i], radius)
 		end
 	end
 
-	methods[`quad-search-radius;radius={radius},size={valueCount},capacity={capacity}`] = function(
-		profiler: Profiler
-	)
+	methods[`quad-search-radius;radius={radius},size={valueCount},capacity={capacity}`] = function()
 		for i = 1, QUERY_COUNT do
 			tree:SearchRadius(queryPoints[i].X, queryPoints[i].Y, radius)
 		end

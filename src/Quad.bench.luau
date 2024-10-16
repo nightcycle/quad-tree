@@ -37,7 +37,7 @@ end
 -- Class
 return {
 	Functions = {
-		["search-radius"] = function(profiler: Profiler)
+		["search-radius"] = function()
 			for i = 1, QUERY_COUNT do
 				tree:SearchRadius(
 					queryPoints[i].X,
@@ -46,7 +46,7 @@ return {
 				)
 			end
 		end,
-		["filter-search-radius"] = function(profiler: Profiler)
+		["filter-search-radius"] = function()
 			for i = 1, QUERY_COUNT do
 				tree:FilterSearchRadius(
 					queryPoints[i].X,
@@ -58,7 +58,7 @@ return {
 				)
 			end
 		end,
-		["search-region"] = function(profiler: Profiler)
+		["search-region"] = function()
 			for i = 1, QUERY_COUNT do
 				tree:SearchRegion(
 					queryPoints[i].X,
@@ -68,7 +68,7 @@ return {
 				)
 			end
 		end,
-		["filter-search-region"] = function(profiler: Profiler)
+		["filter-search-region"] = function()
 			for i = 1, QUERY_COUNT do
 				tree:FilterSearchRegion(
 					queryPoints[i].X,
